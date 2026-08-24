@@ -10,6 +10,12 @@ import fs from 'node:fs';
  */
 const singleFile = process.env.SINGLE_FILE === '1';
 
+/**
+ * Public path the app is served from. Hosts that serve the app from a
+ * subdirectory (GitHub Pages serves `/<repo>/`) need relative asset URLs.
+ */
+const basePath = process.env.BASE_PATH ?? (singleFile ? './' : '/');
+
 function inlineAssets() {
   return {
     name: 'inline-assets',
@@ -44,7 +50,7 @@ function inlineAssets() {
 }
 
 export default defineConfig({
-  base: singleFile ? './' : '/',
+  base: basePath,
   plugins: [react(), tailwindcss(), inlineAssets()],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },

@@ -69,8 +69,21 @@ secrets (*Settings → Secrets and variables → Actions*):
 Without them the workflow still builds and type-checks on every push, and skips
 the deploy with a notice rather than failing.
 
+### GitHub Pages
+
+`.github/workflows/pages.yml` publishes the app to Pages on every push to the
+default branch, using the workflow's own token — no secrets to configure.
+
+Pages serves from a subdirectory and cannot rewrite unknown paths to
+`index.html`, so `npm run build:pages` builds with relative asset URLs and hash
+routing (`/interview/#/candidates`). Deep links then survive a reload without
+the usual `404.html` workaround.
+
+Pages on a **private** repository requires a paid GitHub plan; on a free
+account the repository has to be public for Pages to serve.
+
 The same `dist/` works on any static host; on one that cannot rewrite URLs, use
-`npm run build:single` instead.
+`npm run build:pages` or `npm run build:single` instead.
 
 ---
 
