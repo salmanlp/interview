@@ -34,6 +34,27 @@ automatically. **Settings → Data & privacy → Load demo data** adds seven
 realistic candidates (including one interview left in progress) so every screen
 has something to show.
 
+### Deploying
+
+The app is fully static — the `dist/` build output is the whole deployment.
+
+`netlify.toml` is committed and configures the build, the single-page-app
+redirect (without it, reloading a deep link like `/candidates/abc123` returns a
+404), asset caching, and security headers. `connect-src 'self'` in the
+Content-Security-Policy enforces the privacy promise at the browser level: no
+candidate data can leave the device even if a dependency later tried to send it.
+
+Either connect the repository in the Netlify UI — it reads `netlify.toml` and
+needs no further configuration — or deploy from your machine:
+
+```bash
+npm run build
+npx netlify-cli deploy --prod --dir=dist
+```
+
+The same `dist/` works on any static host; on one that cannot rewrite URLs, use
+`npm run build:single` instead.
+
 ---
 
 ## What it does

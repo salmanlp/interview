@@ -1,0 +1,42 @@
+# Netlify deployment configuration.
+#
+# The app is a static single-page application with no backend — the build
+# output in dist/ is the whole deployment.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Client-side routing: every path that is not a real file must serve
+# index.html, or a deep link like /candidates/abc123 returns a 404 on reload.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Hashed build assets never change under the same name.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# index.html must always be revalidated so a new deploy is picked up.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+    # The app holds candidate personal data in the browser. Framing is denied so
+    # it cannot be clickjacked, and `connect-src 'self'` enforces the privacy
+    # promise at the browser level: no candidate data can be sent anywhere, even
+    # if a dependency later tried to. Google Fonts is the only external origin.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'"
