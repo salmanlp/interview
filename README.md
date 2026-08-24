@@ -44,13 +44,30 @@ redirect (without it, reloading a deep link like `/candidates/abc123` returns a
 Content-Security-Policy enforces the privacy promise at the browser level: no
 candidate data can leave the device even if a dependency later tried to send it.
 
-Either connect the repository in the Netlify UI — it reads `netlify.toml` and
-needs no further configuration — or deploy from your machine:
+**Create the site and deploy in one command.** `--site-name` creates the project
+if it does not already exist, so there is no setup step in the Netlify UI:
 
 ```bash
+npx netlify-cli login                      # once, opens a browser
 npm run build
-npx netlify-cli deploy --prod --dir=dist
+npx netlify-cli deploy --prod --no-build --dir dist \
+  --site-name uiux-interview-assessment
 ```
+
+The site is then live at `https://uiux-interview-assessment.netlify.app`.
+
+**Deploy automatically on every push.** `.github/workflows/deploy.yml` builds
+the app and deploys it: production from the repository's default branch, and a
+preview URL for every other branch and pull request. It needs two repository
+secrets (*Settings → Secrets and variables → Actions*):
+
+| Secret | Where to get it |
+| --- | --- |
+| `NETLIFY_AUTH_TOKEN` | Netlify → User settings → Applications → New access token |
+| `NETLIFY_SITE_ID` | Site configuration → Site details → Project ID, or `netlify status` |
+
+Without them the workflow still builds and type-checks on every push, and skips
+the deploy with a notice rather than failing.
 
 The same `dist/` works on any static host; on one that cannot rewrite URLs, use
 `npm run build:single` instead.

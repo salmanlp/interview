@@ -1,0 +1,108 @@
+name: Deploy to Netlify
+
+# Production deploys come from the repository's default branch; every other
+# push and pull request gets its own preview URL.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: netlify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Check for Netlify credentials
+        id: creds
+        env:
+          TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$SITE_ID" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Netlify not configured::Add the NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID repository secrets to enable deploys. Skipping."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Runs on every push, with or without Netlify credentials, so a broken
+      # build is caught even when deploys are not configured.
+      - name: Type-check and build
+        run: npm run build
+
+      - name: Deploy
+        if: steps.creds.outputs.configured == 'true'
+        id: netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          IS_DEFAULT_BRANCH: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        run: |
+          set -euo pipefail
+          if [ "$IS_DEFAULT_BRANCH" = "true" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "Deploying to production"
+            npx --yes netlify-cli@27 deploy --prod --no-build --dir dist \
+              --message "${GITHUB_SHA::7} ${GITHUB_REF_NAME}" --json > deploy.json
+          else
+            echo "Deploying a preview"
+            npx --yes netlify-cli@27 deploy --no-build --dir dist \
+              --message "${GITHUB_SHA::7} ${GITHUB_REF_NAME}" --json > deploy.json
+          fi
+          # `url` is the live site and is only present on production deploys;
+          # `deploy_url` is the immutable per-deploy URL and is always present.
+          URL=$(node -p "const d=require('./deploy.json'); d.url || d.deploy_url")
+          LOGS=$(node -p "require('./deploy.json').logs || ''")
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Deployed to [$URL]($URL)"
+            [ -n "$LOGS" ] && echo "[Deploy logs]($LOGS)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment the preview URL on the pull request
+        if: steps.creds.outputs.configured == 'true' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = '${{ steps.netlify.outputs.url }}';
+            if (!url) return;
+            const body = `Preview deploy for this pull request: ${url}`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(
+              (c) => c.user.type === 'Bot' && c.body.startsWith('Preview deploy for this pull request:'),
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
