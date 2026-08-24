@@ -174,7 +174,25 @@ export function ensureProtocol(value: string): string {
   return /^https?:\/\//i.test(value) ? value : `https://${value}`;
 }
 
-export function downloadBlob(content: BlobPart, filename: string, type: string): void {
+export interface DownloadFailure {
+  code: string;
+  message: string;
+}
+
+type DownloadErrorHandler = (failure: DownloadFailure) => void;
+
+let downloadErrorHandler: DownloadErrorHandler | null = null;
+
+/** Lets the UI surface a save failure without every call site handling it. */
+export function setDownloadErrorHandler(handler: DownloadErrorHandler | null): void {
+  downloadErrorHandler = handler;
+}
+
+interface SandboxHost {
+  use?: (name: string) => Promise<{ save: (r: { filename: string; data: Blob }) => Promise<unknown> } | null>;
+}
+
+function saveViaAnchor(content: BlobPart, filename: string, type: string): void {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -184,6 +202,39 @@ export function downloadBlob(content: BlobPart, filename: string, type: string):
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/**
+ * Hands a generated file to the user.
+ *
+ * Normally that is an anchor download. When the app runs inside a sandboxed
+ * host that blocks page-initiated downloads, the host's own save API is used
+ * instead — so exports keep working in an embedded preview.
+ */
+export function downloadBlob(content: BlobPart, filename: string, type: string): void {
+  const host = (globalThis as { claude?: SandboxHost }).claude;
+
+  if (typeof host?.use === 'function') {
+    void (async () => {
+      try {
+        const downloads = await host.use!('downloads');
+        if (!downloads) {
+          saveViaAnchor(content, filename, type);
+          return;
+        }
+        await downloads.save({ filename, data: new Blob([content], { type }) });
+      } catch (error) {
+        const failure = error as Partial<DownloadFailure>;
+        downloadErrorHandler?.({
+          code: failure?.code ?? 'unavailable',
+          message: failure?.message ?? 'The file could not be saved.',
+        });
+      }
+    })();
+    return;
+  }
+
+  saveViaAnchor(content, filename, type);
 }
 
 export function slugify(value: string): string {

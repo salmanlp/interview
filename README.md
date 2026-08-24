@@ -20,9 +20,14 @@ npm install
 npm run dev        # http://localhost:5173
 npm run build      # type-check + production build into dist/
 npm run preview    # serve the production build
+npm run build:single  # one self-contained index.html, for static hosts
 ```
 
 Requires Node 20+.
+
+`build:single` inlines all CSS and JS into a single `dist/index.html` and
+switches to hash routing, so the app runs from a file:// path or any host that
+serves one static file with no URL rewriting.
 
 On first run the question bank and the default template are installed
 automatically. **Settings → Data & privacy → Load demo data** adds seven

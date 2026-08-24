@@ -1,6 +1,8 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAppStore } from '@/store/AppStore';
+import { useToast } from '@/store/ToastProvider';
+import { setDownloadErrorHandler } from '@/lib/utils';
 import { AppShell } from '@/components/layout/AppShell';
 import { Toaster } from '@/components/ui/Toaster';
 import { Icon } from '@/components/ui/Icon';
@@ -91,8 +93,30 @@ function NotFound() {
   );
 }
 
+const DOWNLOAD_MESSAGES: Record<string, string> = {
+  declined: 'The save was cancelled.',
+  extension_not_enabled: 'This preview cannot save that file type. Run the app locally to export it.',
+  rejected_extension: 'This preview cannot save that file type. Run the app locally to export it.',
+  too_large: 'The file is too large for this preview to save.',
+  rate_limited: 'Another save is already in progress — try again in a moment.',
+};
+
 export function App() {
   const { ready, error } = useAppStore();
+  const toast = useToast();
+
+  // Exports run through the host's save API when the app is embedded in a
+  // sandbox that blocks page-initiated downloads; report anything it refuses.
+  useEffect(() => {
+    setDownloadErrorHandler(({ code, message }) => {
+      if (code === 'declined') {
+        toast.info('Save cancelled');
+        return;
+      }
+      toast.error('Could not save the file', DOWNLOAD_MESSAGES[code] ?? message);
+    });
+    return () => setDownloadErrorHandler(null);
+  }, [toast]);
 
   if (!ready || error) {
     return (
