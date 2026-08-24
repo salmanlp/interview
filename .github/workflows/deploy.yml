@@ -23,11 +23,13 @@ jobs:
         id: creds
         env:
           TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
-          if [ -z "$TOKEN" ] || [ -z "$SITE_ID" ]; then
+          # Only the auth token is required. Without a site id the deploy uses
+          # --site-name, which creates the site on the first run and reuses it
+          # afterwards, so there is nothing to set up in the Netlify UI.
+          if [ -z "$TOKEN" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=Netlify not configured::Add the NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID repository secrets to enable deploys. Skipping."
+            echo "::notice title=Netlify not configured::Add a NETLIFY_AUTH_TOKEN repository secret to enable deploys. Skipping."
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
@@ -53,18 +55,34 @@ jobs:
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          # Optional repository variables; sensible defaults if unset.
+          SITE_NAME: ${{ vars.NETLIFY_SITE_NAME || 'uiux-interview-assessment' }}
+          TEAM: ${{ vars.NETLIFY_TEAM }}
           IS_DEFAULT_BRANCH: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
         run: |
           set -euo pipefail
-          if [ "$IS_DEFAULT_BRANCH" = "true" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "Deploying to production"
-            npx --yes netlify-cli@27 deploy --prod --no-build --dir dist \
-              --message "${GITHUB_SHA::7} ${GITHUB_REF_NAME}" --json > deploy.json
+
+          # Target an existing site by id when one is configured; otherwise name
+          # it, which creates the site on the first deploy.
+          TARGET=()
+          if [ -n "${NETLIFY_SITE_ID:-}" ]; then
+            TARGET=(--site "$NETLIFY_SITE_ID")
           else
-            echo "Deploying a preview"
-            npx --yes netlify-cli@27 deploy --no-build --dir dist \
-              --message "${GITHUB_SHA::7} ${GITHUB_REF_NAME}" --json > deploy.json
+            TARGET=(--site-name "$SITE_NAME")
+            [ -n "${TEAM:-}" ] && TARGET+=(--team "$TEAM")
           fi
+
+          PROD=()
+          if [ "$IS_DEFAULT_BRANCH" = "true" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "Deploying to production as ${NETLIFY_SITE_ID:-$SITE_NAME}"
+            PROD=(--prod)
+          else
+            echo "Deploying a preview of ${NETLIFY_SITE_ID:-$SITE_NAME}"
+          fi
+
+          npx --yes netlify-cli@27 deploy "${PROD[@]}" "${TARGET[@]}" \
+            --no-build --dir dist \
+            --message "${GITHUB_SHA::7} ${GITHUB_REF_NAME}" --json > deploy.json
           # `url` is the live site and is only present on production deploys;
           # `deploy_url` is the immutable per-deploy URL and is always present.
           URL=$(node -p "const d=require('./deploy.json'); d.url || d.deploy_url")

@@ -58,16 +58,28 @@ The site is then live at `https://uiux-interview-assessment.netlify.app`.
 
 **Deploy automatically on every push.** `.github/workflows/deploy.yml` builds
 the app and deploys it: production from the repository's default branch, and a
-preview URL for every other branch and pull request. It needs two repository
-secrets (*Settings → Secrets and variables → Actions*):
+preview URL for every other branch and pull request.
+
+It needs one repository secret (*Settings → Secrets and variables → Actions*):
 
 | Secret | Where to get it |
 | --- | --- |
 | `NETLIFY_AUTH_TOKEN` | Netlify → User settings → Applications → New access token |
-| `NETLIFY_SITE_ID` | Site configuration → Site details → Project ID, or `netlify status` |
 
-Without them the workflow still builds and type-checks on every push, and skips
-the deploy with a notice rather than failing.
+The site itself does not need to exist first — without a site id the deploy
+names the site and Netlify creates it on the first run. Optional repository
+*variables* tune that:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `NETLIFY_SITE_NAME` | `uiux-interview-assessment` | Subdomain to create or reuse |
+| `NETLIFY_TEAM` | your default team | Team slug, when you belong to several |
+
+Set the `NETLIFY_SITE_ID` secret instead to deploy into a site that already
+exists; it takes precedence over the name.
+
+Without the token the workflow still builds and type-checks on every push, and
+skips the deploy with a notice rather than failing.
 
 ### GitHub Pages
 
