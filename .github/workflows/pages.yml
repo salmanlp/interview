@@ -3,6 +3,10 @@ name: Deploy to GitHub Pages
 # Publishes the app to GitHub Pages. Pages serves the site from a
 # subdirectory (/<repo>/) and cannot rewrite unknown paths to index.html, so
 # the Pages build uses relative asset URLs and hash routing — see build:pages.
+#
+# Pages is unavailable on a private repository without a paid plan. Rather than
+# failing every push until then, the deploy is skipped with a notice and the
+# build still runs, so the code is validated either way.
 on:
   push:
     branches: [claude/designer-interview-assessment-o7bwxu, main]
@@ -13,8 +17,6 @@ permissions:
   pages: write
   id-token: write
 
-# One deploy at a time; let a running one finish rather than publishing a
-# half-uploaded site.
 concurrency:
   group: github-pages
   cancel-in-progress: false
@@ -23,32 +25,53 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.pages.outcome == 'success' }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - run: npm ci
 
       - name: Configure Pages
-        # enablement turns Pages on if the repository has never used it.
+        id: pages
+        # enablement turns Pages on if the repository has never used it. This
+        # fails when the plan does not allow Pages on a private repository, so
+        # it is not treated as a build failure.
+        continue-on-error: true
         uses: actions/configure-pages@v5
         with:
           enablement: true
 
+      - name: Report Pages availability
+        if: steps.pages.outcome != 'success'
+        run: |
+          echo "::notice title=GitHub Pages not enabled::Could not create a Pages site for this repository. Pages requires a public repository, or a paid plan for private ones. Enable it at Settings → Pages (Source: GitHub Actions) and re-run this workflow."
+          {
+            echo "### GitHub Pages is not enabled"
+            echo ""
+            echo "Pages needs a public repository, or a paid plan for a private one."
+            echo "Enable it under **Settings → Pages** with source **GitHub Actions**, then re-run."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Runs either way, so a broken build is caught even when Pages is off.
       - name: Build
         run: npm run build:pages
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Upload the site
+        if: steps.pages.outcome == 'success'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
     name: Deploy
     needs: build
+    if: needs.build.outputs.configured == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
