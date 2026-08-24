@@ -17,6 +17,7 @@ import { ScoreSelector } from '@/components/interview/ScoreSelector';
 import { NotesEditor } from '@/components/interview/NotesEditor';
 import { QuestionGuidance } from '@/components/interview/QuestionGuidance';
 import { CompleteInterviewModal } from '@/components/interview/CompleteInterviewModal';
+import { ChallengeCriteria } from '@/components/interview/ChallengeCriteria';
 import { ShortcutsModal } from '@/components/layout/ShortcutsModal';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useToast } from '@/store/ToastProvider';
@@ -585,6 +586,18 @@ export function InterviewWorkspacePage() {
                   {draft.challenge.brief}
                 </p>
                 <div className="mt-3">
+                  <ChallengeCriteria
+                    challenge={draft.challenge}
+                    scaleMax={draft.scoring.scaleMax}
+                    disabled={readOnly}
+                    onChange={(criteria) =>
+                      update((i) => ({ ...i, challenge: { ...i.challenge, criteria } }))
+                    }
+                  />
+                </div>
+
+                <div className="mt-3">
+                  <p className="mb-2 text-[13px] font-medium text-ink-2">Overall challenge score</p>
                   <ScoreSelector
                     value={draft.challenge.score}
                     scoring={draft.scoring}

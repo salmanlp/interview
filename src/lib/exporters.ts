@@ -1,5 +1,6 @@
 import { computeResult } from './scoring';
 import {
+  CHALLENGE_CRITERIA,
   RECOMMENDATION_LABELS,
   DECISION_LABELS,
   SKILL_LABELS,
@@ -130,6 +131,10 @@ export function interviewCsv(interview: Interview, candidate: Candidate | undefi
   if (interview.challenge.enabled) {
     rows.push([]);
     rows.push(['Design challenge score', interview.challenge.score ?? '']);
+    for (const criterion of CHALLENGE_CRITERIA) {
+      const value = interview.challenge.criteria[criterion];
+      if (value != null) rows.push([`Challenge — ${criterion}`, value]);
+    }
     rows.push(['Design challenge notes', interview.challenge.notes]);
   }
 
