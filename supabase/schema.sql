@@ -56,7 +56,11 @@ create table if not exists public.audit (
   id           text primary key,
   candidate_id text        generated always as (data->>'candidateId') stored,
   data         jsonb       not null,
-  at           timestamptz generated always as ((data->>'at')::timestamptz) stored,
+  -- Kept as text, not timestamptz: casting text to timestamptz depends on the
+  -- session TimeZone and so is not immutable, which a generated column forbids.
+  -- Every timestamp the app writes is an ISO-8601 UTC string, and those sort
+  -- chronologically as text.
+  at           text        generated always as (data->>'at') stored,
   updated_at   timestamptz not null default now()
 );
 create index if not exists audit_candidate_idx on public.audit (candidate_id);
