@@ -35,8 +35,10 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
-    # The app holds candidate personal data in the browser. Framing is denied so
-    # it cannot be clickjacked, and `connect-src 'self'` enforces the privacy
-    # promise at the browser level: no candidate data can be sent anywhere, even
-    # if a dependency later tried to. Google Fonts is the only external origin.
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'"
+    # The app holds candidate personal data. Framing is denied so it cannot be
+    # clickjacked, and connect-src is pinned to this origin plus Supabase — the
+    # only place candidate data may go, so a dependency cannot exfiltrate it
+    # anywhere else. The Supabase entries are inert on local-only builds; drop
+    # them if you never use a shared database. Google Fonts is the only other
+    # external origin, and carries no application data.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'"

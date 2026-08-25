@@ -133,6 +133,43 @@ src/
 └── pages/                   # One file per route
 ```
 
+### Sharing data across a team
+
+By default the app is local: IndexedDB, no account, nothing leaves the machine.
+That suits one interviewer, but two interviewers on two laptops see two
+separate datasets.
+
+Setting two environment variables switches it to a shared Supabase database,
+and the app then requires a sign-in:
+
+```
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-public-key
+```
+
+1. Create a project at [supabase.com](https://supabase.com) (the free tier is
+   ample for a hiring team).
+2. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor. It
+   creates the tables, indexes and row-level security policies.
+3. Add the two variables in Netlify under *Site configuration → Environment
+   variables*, and redeploy.
+4. Create accounts for your interviewers in *Authentication → Users*.
+
+Both values are safe in the browser bundle: every table has row-level security
+requiring an authenticated session, so the anon key alone reveals nothing.
+Never ship the `service_role` key.
+
+**What sharing changes.** One workspace: everyone signed in sees the same
+candidates, interviews, templates and questions. Personal settings — your name,
+your theme — stay per user. Anyone with an account can read every candidate, so
+account access *is* access to all hiring data. Concurrent edits are last-write-
+wins, which is right for interviews (one person scores one interview) but means
+two people editing the same template can overwrite each other.
+
+**Moving existing data up.** Export a backup from the local build (*Settings →
+Data & privacy → Export all data*), sign in to the shared build, and import it.
+The backup format is identical on both sides.
+
 ### Storage is swappable
 
 Nothing above `data/` knows what IndexedDB is. The UI depends on the
@@ -236,6 +273,8 @@ type freely.
 
 Candidate data is personal data, and this app treats it that way.
 
+In the default local mode:
+
 - Everything is stored in IndexedDB in the browser profile running the app
 - No analytics, no error reporting, no candidate data in any network request
 - The only outbound request is the Google Fonts stylesheet, which carries no
@@ -246,6 +285,13 @@ Candidate data is personal data, and this app treats it that way.
   UI rather than buried in documentation
 
 Clearing your browser's site data deletes everything. Export a backup first.
+
+In shared mode the guarantee changes honestly, and the interface says so rather
+than repeating the local claim: candidate data is held in your Supabase project,
+protected by row-level security and readable only with a session. There is still
+no telemetry and no analytics, and the Content-Security-Policy pins
+`connect-src` to this origin plus Supabase — so a compromised dependency has
+nowhere else to send anything.
 
 ---
 

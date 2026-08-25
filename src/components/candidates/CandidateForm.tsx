@@ -73,7 +73,7 @@ interface CandidateFormProps {
 }
 
 export function CandidateForm({ open, onClose, candidate, onSaved }: CandidateFormProps) {
-  const { saveCandidate, settings } = useAppStore();
+  const { saveCandidate, settings, shared } = useAppStore();
   const toast = useToast();
   const [draft, setDraft] = useState<Candidate>(() => candidate ?? emptyCandidate(settings.interviewerName));
   const [errors, setErrors] = useState<Errors>({});
@@ -308,7 +308,7 @@ export function CandidateForm({ open, onClose, candidate, onSaved }: CandidateFo
         </Field>
 
         <div className="sm:col-span-2 mt-1 rounded-lg border border-line bg-surface-2 p-3">
-          <DataNotice />
+          <DataNotice shared={shared} />
         </div>
         <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
       </form>

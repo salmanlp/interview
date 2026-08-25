@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { IndexedDbRepository } from '@/data/indexedDb';
+import { getRepository, isSharedWorkspace } from '@/data/createRepository';
 import type { Repository } from '@/data/repository';
 import { DEFAULT_SCORING } from '@/lib/scoring';
 import { buildDemoData, DEMO_CANDIDATE_IDS } from '@/lib/seed/demo';
@@ -100,11 +100,13 @@ interface AppStoreValue {
   clearAllData: () => Promise<void>;
   storageUsage: { usage: number; quota: number } | null;
   refreshStorageUsage: () => Promise<void>;
+  /** True when candidate data lives in a shared database rather than this browser. */
+  shared: boolean;
 }
 
 const AppStoreContext = createContext<AppStoreValue | null>(null);
 
-const repository: Repository = new IndexedDbRepository();
+const repository: Repository = getRepository();
 
 function readStoredTheme(): ThemePreference {
   if (typeof localStorage === 'undefined') return 'system';
@@ -189,7 +191,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setError(
           e instanceof Error
             ? e.message
-            : 'Could not open local storage. Private browsing can block IndexedDB.',
+            : isSharedWorkspace()
+              ? 'Could not reach the shared database.'
+              : 'Could not open local storage. Private browsing can block IndexedDB.',
         );
         setReady(true);
       }
@@ -551,6 +555,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       clearAllData,
       storageUsage,
       refreshStorageUsage,
+      shared: isSharedWorkspace(),
     }),
     [
       ready,

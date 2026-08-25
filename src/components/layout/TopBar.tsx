@@ -8,6 +8,7 @@ import { Kbd } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Misc';
 import { SaveIndicator } from '@/components/ui/DomainBadges';
 import type { ThemePreference } from '@/lib/types';
+import { isSupabaseConfigured, signOut } from '@/data/supabase';
 
 interface TopBarProps {
   onOpenSearch: () => void;
@@ -18,7 +19,7 @@ interface TopBarProps {
 const THEME_SEQUENCE: ThemePreference[] = ['light', 'dark', 'system'];
 
 export function TopBar({ onOpenSearch, onOpenMobileNav, onOpenShortcuts }: TopBarProps) {
-  const { settings, setTheme, candidates, interviews, saveState, lastSavedAt } = useAppStore();
+  const { settings, setTheme, candidates, interviews, saveState, lastSavedAt, shared } = useAppStore();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const location = useLocation();
@@ -226,10 +227,24 @@ export function TopBar({ onOpenSearch, onOpenMobileNav, onOpenShortcuts }: TopBa
                   </button>
                 </li>
               </ul>
+              {isSupabaseConfigured() ? (
+                <div className="border-t border-line p-1.5">
+                  <button
+                    type="button"
+                    onClick={() => void signOut()}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] text-ink-2 hover:bg-surface-2"
+                  >
+                    <Icon name="external" size={15} className="text-subtle" />
+                    Sign out
+                  </button>
+                </div>
+              ) : null}
               <div className="border-t border-line px-3 py-2">
                 <p className="flex items-start gap-1.5 text-[11px] leading-snug text-subtle">
                   <Icon name="shield" size={12} className="mt-0.5 shrink-0 text-ok" />
-                  All candidate data stays on this device.
+                  {shared
+                    ? 'Candidate data is shared with your team and needs a sign-in.'
+                    : 'All candidate data stays on this device.'}
                 </p>
               </div>
             </div>

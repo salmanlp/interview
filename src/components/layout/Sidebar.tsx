@@ -3,6 +3,7 @@ import { cx } from '@/lib/utils';
 import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/Badge';
 import { PRIMARY_NAV } from './navigation';
+import { isSharedWorkspace } from '@/data/createRepository';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -97,7 +98,7 @@ export function Sidebar({ collapsed, onToggle, counts, drawer, onNavigate }: Sid
         {!collapsed || drawer ? (
           <p className="mt-1 flex items-center gap-1.5 px-2.5 pb-1 text-[11px] leading-snug text-subtle">
             <Icon name="database" size={12} className="shrink-0" />
-            Stored in this browser
+            {isSharedWorkspace() ? 'Shared team database' : 'Stored in this browser'}
           </p>
         ) : null}
       </div>

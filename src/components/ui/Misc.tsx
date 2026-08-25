@@ -339,13 +339,14 @@ export function InfoRow({
   );
 }
 
-export function DataNotice() {
+export function DataNotice({ shared }: { shared?: boolean }) {
   return (
     <p className="flex items-start gap-2 text-[12px] leading-relaxed text-muted">
       <Icon name="shield" size={14} className="mt-0.5 shrink-0 text-ok" />
       <span>
-        Candidate data is stored in this browser only (IndexedDB). Nothing is uploaded, and no
-        analytics leave this device.
+        {shared
+          ? 'Candidate data is stored in your team\u2019s database and is readable only by signed-in colleagues. No analytics leave this device.'
+          : 'Candidate data is stored in this browser only (IndexedDB). Nothing is uploaded, and no analytics leave this device.'}
       </span>
     </p>
   );

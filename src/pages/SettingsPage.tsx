@@ -33,6 +33,7 @@ export function SettingsPage() {
     clearAllData,
     storageUsage,
     refreshStorageUsage,
+    shared,
   } = useAppStore();
   const toast = useToast();
   const [params, setParams] = useSearchParams();
@@ -436,16 +437,30 @@ export function SettingsPage() {
             <Card>
               <CardHeader
                 title="Where your data lives"
-                description="This app has no backend. Everything is written to IndexedDB in this browser profile."
+                description={
+                  shared
+                    ? 'This workspace is backed by a shared database, so everyone on your team sees the same candidates and scores.'
+                    : 'This app has no backend. Everything is written to IndexedDB in this browser profile.'
+                }
               />
               <div className="rounded-lg border border-ok/30 bg-ok-soft/40 p-3.5">
                 <p className="flex items-start gap-2 text-[13px] leading-relaxed text-ink-2">
                   <Icon name="shield" size={15} className="mt-0.5 shrink-0 text-ok" />
-                  <span>
-                    Candidate names, contact details and interview notes never leave this device. There
-                    is no telemetry, no analytics and no network request carrying candidate data.
-                    Clearing your browser's site data deletes everything — export a backup first.
-                  </span>
+                  {shared ? (
+                    <span>
+                      Candidate names, contact details and interview notes are stored in your team's
+                      database and are protected by row-level security — they cannot be read without
+                      signing in. There is still no telemetry and no analytics. Anyone with an account
+                      can see every candidate, so treat account access as access to all hiring data.
+                    </span>
+                  ) : (
+                    <span>
+                      Candidate names, contact details and interview notes never leave this device.
+                      There is no telemetry, no analytics and no network request carrying candidate
+                      data. Clearing your browser's site data deletes everything — export a backup
+                      first.
+                    </span>
+                  )}
                 </p>
               </div>
 
@@ -456,8 +471,10 @@ export function SettingsPage() {
                 <Usage label="Questions" value={questions.length} />
                 <Usage label="Audit events" value={audit.length} />
                 <Usage
-                  label="Storage used"
-                  value={storageUsage ? formatBytes(storageUsage.usage) : '—'}
+                  label={shared ? 'Backend' : 'Storage used'}
+                  value={
+                    shared ? 'Supabase' : storageUsage ? formatBytes(storageUsage.usage) : '—'
+                  }
                 />
               </dl>
 

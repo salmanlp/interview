@@ -43,6 +43,7 @@ export function InterviewSetupPage() {
     saveInterview,
     saveCandidate,
     logEvent,
+    shared,
   } = useAppStore();
   const navigate = useNavigate();
   const toast = useToast();
@@ -483,7 +484,7 @@ export function InterviewSetupPage() {
             ) : null}
 
             <div className="mt-4 border-t border-line pt-3.5">
-              <DataNotice />
+              <DataNotice shared={shared} />
             </div>
           </Card>
         </aside>

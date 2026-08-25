@@ -12,6 +12,7 @@
     "build:pages": "tsc -b && BASE_PATH=./ VITE_HASH_ROUTER=1 vite build"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.0"
