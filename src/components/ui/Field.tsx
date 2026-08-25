@@ -202,8 +202,12 @@ export function Switch({
       >
         <span
           className={cx(
-            'absolute top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-150',
-            checked ? 'translate-x-[18px]' : 'translate-x-0.5',
+            // `left-0` is load-bearing: without an explicit horizontal anchor
+            // the knob falls back to its static position, which a button's
+            // default `text-align: center` puts in the middle of the track —
+            // the translate then pushes it clean outside.
+            'absolute left-0 top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-150',
+            checked ? 'translate-x-[1.125rem]' : 'translate-x-0.5',
           )}
         />
       </button>
