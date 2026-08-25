@@ -38,68 +38,25 @@ has something to show.
 
 The app is fully static — the `dist/` build output is the whole deployment.
 
-`netlify.toml` is committed and configures the build, the single-page-app
-redirect (without it, reloading a deep link like `/candidates/abc123` returns a
-404), asset caching, and security headers. `connect-src 'self'` in the
-Content-Security-Policy enforces the privacy promise at the browser level: no
-candidate data can leave the device even if a dependency later tried to send it.
-
-**Create the site and deploy in one command.** `--site-name` creates the project
-if it does not already exist, so there is no setup step in the Netlify UI:
-
-```bash
-npx netlify-cli login                      # once, opens a browser
-npm run build
-npx netlify-cli deploy --prod --no-build --dir dist \
-  --site-name uiux-interview-assessment
-```
-
-The site is then live at `https://<site-name>.netlify.app`.
+This repository is connected to **Netlify**, which builds it on every push and
+serves it at <https://interview-db.netlify.app>. Deployment settings live in
+`netlify.toml`: the build command, the single-page-app redirect (without it,
+reloading a deep link like `/candidates/abc123` returns a 404), asset caching,
+and security headers. `connect-src 'self'` in the Content-Security-Policy
+enforces the privacy promise at the browser level: no candidate data can leave
+the device even if a dependency later tried to send it.
 
 `dist/` also carries its own `_redirects` and `_headers` (from `public/`), so a
 folder-only deploy — drag-and-drop, or `--dir dist` — gets the same routing
-fallback and security headers as a build that reads `netlify.toml`.
+fallback and headers as a build that reads `netlify.toml`.
 
-**Deploy automatically on every push.** `.github/workflows/deploy.yml` builds
-the app and deploys it: production from the repository's default branch, and a
-preview URL for every other branch and pull request.
+GitHub Actions only type-checks and builds (`.github/workflows/ci.yml`);
+deploying is Netlify's job, so nothing needs a Netlify token in CI.
 
-It needs one repository secret (*Settings → Secrets and variables → Actions*):
-
-| Secret | Where to get it |
-| --- | --- |
-| `NETLIFY_AUTH_TOKEN` | Netlify → User settings → Applications → New access token |
-
-The site itself does not need to exist first — without a site id the deploy
-names the site and Netlify creates it on the first run. Optional repository
-*variables* tune that:
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `NETLIFY_SITE_NAME` | `interview-db` | Subdomain to create or reuse |
-| `NETLIFY_TEAM` | your default team | Team slug, when you belong to several |
-
-Set the `NETLIFY_SITE_ID` secret instead to deploy into a site that already
-exists; it takes precedence over the name.
-
-Without the token the workflow still builds and type-checks on every push, and
-skips the deploy with a notice rather than failing.
-
-### GitHub Pages
-
-`.github/workflows/pages.yml` publishes the app to Pages on every push to the
-default branch, using the workflow's own token — no secrets to configure.
-
-Pages serves from a subdirectory and cannot rewrite unknown paths to
-`index.html`, so `npm run build:pages` builds with relative asset URLs and hash
-routing (`/interview/#/candidates`). Deep links then survive a reload without
-the usual `404.html` workaround.
-
-Pages on a **private** repository requires a paid GitHub plan; on a free
-account the repository has to be public for Pages to serve.
-
-The same `dist/` works on any static host; on one that cannot rewrite URLs, use
-`npm run build:pages` or `npm run build:single` instead.
+To deploy somewhere else, `npm run build` and serve `dist/` from any static
+host. On a host that cannot rewrite URLs, use `npm run build:pages` (relative
+asset paths and hash routing) or `npm run build:single` (one self-contained
+HTML file) instead.
 
 ---
 

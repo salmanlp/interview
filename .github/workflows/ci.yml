@@ -1,0 +1,41 @@
+name: CI
+
+# Deployment is handled by Netlify's own Git integration, which builds this
+# repository on every push. This workflow only validates the code, so a broken
+# build is caught here rather than in a failed deploy.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Type-check and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # `npm run build` runs `tsc -b` before Vite, so this covers type-checking.
+      - run: npm run build
+
+      - name: Check the deploy output
+        run: |
+          set -euo pipefail
+          for f in index.html _redirects _headers; do
+            if [ ! -f "dist/$f" ]; then
+              echo "::error::dist/$f is missing from the build output"
+              exit 1
+            fi
+          done
+          echo "dist/ contains index.html, _redirects and _headers"
