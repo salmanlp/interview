@@ -1,0 +1,8 @@
+# Client-side routing fallback.
+#
+# netlify.toml covers Netlify builds that run from this repository, but a
+# deploy of the dist/ folder on its own (drag-and-drop, or `netlify deploy
+# --dir dist`) never sees that file. This one ships inside dist/, so the
+# fallback applies however the site is deployed — without it, reloading a deep
+# link such as /candidates/abc123 returns a 404.
+/*  /index.html  200

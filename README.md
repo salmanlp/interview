@@ -54,7 +54,11 @@ npx netlify-cli deploy --prod --no-build --dir dist \
   --site-name uiux-interview-assessment
 ```
 
-The site is then live at `https://uiux-interview-assessment.netlify.app`.
+The site is then live at `https://<site-name>.netlify.app`.
+
+`dist/` also carries its own `_redirects` and `_headers` (from `public/`), so a
+folder-only deploy — drag-and-drop, or `--dir dist` — gets the same routing
+fallback and security headers as a build that reads `netlify.toml`.
 
 **Deploy automatically on every push.** `.github/workflows/deploy.yml` builds
 the app and deploys it: production from the repository's default branch, and a
@@ -72,7 +76,7 @@ names the site and Netlify creates it on the first run. Optional repository
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `NETLIFY_SITE_NAME` | `uiux-interview-assessment` | Subdomain to create or reuse |
+| `NETLIFY_SITE_NAME` | `interview-db` | Subdomain to create or reuse |
 | `NETLIFY_TEAM` | your default team | Team slug, when you belong to several |
 
 Set the `NETLIFY_SITE_ID` secret instead to deploy into a site that already
