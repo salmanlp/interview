@@ -149,8 +149,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-public-key
 
 1. Create a project at [supabase.com](https://supabase.com) (the free tier is
    ample for a hiring team).
-2. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor. It
-   creates the tables, indexes and row-level security policies.
+2. Apply [`supabase/migrations`](supabase/) — paste the file into the SQL
+   editor, or let the Supabase GitHub integration run it on push. It creates
+   the tables, indexes and row-level security policies, and is idempotent.
 3. Add the two variables in Netlify under *Site configuration → Environment
    variables*, and redeploy.
 4. Create accounts for your interviewers in *Authentication → Users*.
