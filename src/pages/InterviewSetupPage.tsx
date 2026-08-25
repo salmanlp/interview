@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppStore } from '@/store/AppStore';
 import { createInterview, nextRoundNumber, ROUND_LABEL_SUGGESTIONS } from '@/lib/interview';
-import type { InterviewMode } from '@/lib/types';
+import type { InterviewMode, InterviewQuestion } from '@/lib/types';
 import { cx } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, PageHeader } from '@/components/ui/Card';
@@ -10,6 +10,7 @@ import { Field, Input, Select, Switch } from '@/components/ui/Field';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar, DataNotice, EmptyState } from '@/components/ui/Misc';
 import { CandidateForm } from '@/components/candidates/CandidateForm';
+import { TailorPanel } from '@/components/interview/TailorPanel';
 import { useToast } from '@/store/ToastProvider';
 
 const DURATIONS = [15, 30, 45, 60];
@@ -61,6 +62,7 @@ export function InterviewSetupPage() {
   const [includeChallenge, setIncludeChallenge] = useState(false);
   const [candidateFormOpen, setCandidateFormOpen] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [tailored, setTailored] = useState<InterviewQuestion[] | null>(null);
 
   const candidate = candidates.find((c) => c.id === candidateId) ?? null;
   const template = templates.find((t) => t.id === templateId) ?? null;
@@ -81,7 +83,7 @@ export function InterviewSetupPage() {
     setRoundLabel(ROUND_LABEL_SUGGESTIONS[Math.min(round - 1, ROUND_LABEL_SUGGESTIONS.length - 1)]);
   }, [round]);
 
-  const questionCount = useMemo(() => {
+  const templateQuestionCount = useMemo(() => {
     if (!template) return 0;
     const active = new Set(questions.filter((q) => q.active).map((q) => q.id));
     return template.sections.reduce(
@@ -89,6 +91,8 @@ export function InterviewSetupPage() {
       0,
     );
   }, [template, questions]);
+
+  const questionCount = tailored ? tailored.length : templateQuestionCount;
 
   const openInterview = interviews.find(
     (i) => i.status === 'in_progress' && i.candidateId === candidateId,
@@ -114,6 +118,7 @@ export function InterviewSetupPage() {
         roundLabel: roundLabel.trim() || `Round ${round}`,
         includeChallenge,
         settings,
+        questionOverride: tailored ?? undefined,
       });
       await saveInterview(interview);
       if (candidate.status === 'new' || candidate.status === 'scheduled') {
@@ -121,7 +126,9 @@ export function InterviewSetupPage() {
       }
       await logEvent(
         'interview_started',
-        `${interview.roundLabel} started using "${template.name}" (${questionCount} questions, ${duration} min).`,
+        tailored
+          ? `${interview.roundLabel} started with a tailored set of ${questionCount} questions (based on "${template.name}", ${duration} min).`
+          : `${interview.roundLabel} started using "${template.name}" (${questionCount} questions, ${duration} min).`,
         { candidateId: candidate.id, interviewId: interview.id },
       );
       navigate(`/interviews/${interview.id}`, { replace: true });
@@ -400,6 +407,18 @@ export function InterviewSetupPage() {
               </div>
             </div>
           </Card>
+          <Card>
+            <CardHeader
+              title="Question set"
+              description="By default the interview runs the whole template. Tailor it when you already know something about the candidate."
+            />
+            <TailorPanel
+              questions={questions}
+              candidate={candidate}
+              durationMinutes={duration}
+              onChange={setTailored}
+            />
+          </Card>
         </div>
 
         <aside className="lg:sticky lg:top-20 lg:self-start">
@@ -416,7 +435,14 @@ export function InterviewSetupPage() {
               </div>
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted">Questions</dt>
-                <dd className="font-medium text-ink tabular">{questionCount}</dd>
+                <dd className="font-medium text-ink tabular">
+                  {questionCount}
+                  {tailored ? (
+                    <span className="ml-1.5 rounded bg-brand-soft px-1.5 py-0.5 text-[10.5px] font-medium text-brand-ink">
+                      tailored
+                    </span>
+                  ) : null}
+                </dd>
               </div>
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted">Maximum score</dt>

@@ -74,6 +74,14 @@ persistent *Interview in progress* banner with progress, elapsed time and a
 **Resume** action — the clock picks up where it left off and the resume is
 recorded in the audit trail.
 
+**Tailor it to the candidate.** An interview should spend its time where the
+uncertainty is. At setup you can mark each skill as an *evidenced strength* or
+as *needs probing*, set the level, and the app proposes a question set: broad
+coverage where there is no evidence, and only the hard questions where the
+candidate has clearly done the work. Every question carries the reason it was
+picked, and you add or remove any of them before starting. Rule-based and
+entirely local — no model, no network call.
+
 **Score it fairly.** Questions carry a weight (1×, 2×, 3×), so a practical Figma
 task or a real-world scenario counts for more than a definition. Percentages are
 computed over the questions that were actually scored, so an interview that ran

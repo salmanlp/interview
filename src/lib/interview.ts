@@ -59,10 +59,18 @@ export interface CreateInterviewInput {
   roundLabel: string;
   includeChallenge: boolean;
   settings: Settings;
+  /**
+   * A question set tailored to this candidate. When present it replaces the
+   * template's own list; the template is still recorded for provenance.
+   */
+  questionOverride?: InterviewQuestion[];
 }
 
 export function createInterview(input: CreateInterviewInput): Interview {
-  const questions = buildInterviewQuestions(input.template, input.questions);
+  const questions =
+    input.questionOverride?.length
+      ? input.questionOverride
+      : buildInterviewQuestions(input.template, input.questions);
   const answers: Record<string, Answer> = {};
   for (const q of questions) answers[q.questionId] = emptyAnswer(q.questionId);
   const timestamp = now();
